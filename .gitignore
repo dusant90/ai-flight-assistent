@@ -1,0 +1,14 @@
+# Secrets - NEVER commit real keys. .env.example (no secrets) is committed instead.
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,53 @@
+# Docker Compose defines the services (containers) our app needs to run.
+# Start everything with:  docker compose up -d
+# Stop everything with:   docker compose down   (add -v to also delete the data)
+
+services:
+  # Postgres database with the pgvector extension pre-installed.
+  # We use this ONE database for three jobs later on:
+  #   1. RAG vector store (embeddings)
+  #   2. LangGraph checkpointer (conversation memory)
+  #   3. bookings table
+  db:
+    # pgvector/pgvector = official Postgres image with the vector extension baked in.
+    # pg16 = Postgres major version 16.
+    image: pgvector/pgvector:pg16
+
+    # A friendly name for the running container (instead of a random one).
+    container_name: travel_db
+
+    # If the container crashes or the machine reboots, restart it automatically
+    # (but not if we deliberately stopped it).
+    restart: unless-stopped
+
+    # Settings Postgres reads on first startup to create the database and login.
+    # These come from the .env file (see step 1.3). The ${VAR:-default} syntax
+    # means "use VAR from .env, or this default if it's missing".
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-travel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-travel}
+      POSTGRES_DB: ${POSTGRES_DB:-travel}
+
+    # Port mapping "host:container".
+    # Postgres listens on 5432 INSIDE the container. We expose it on 5433 on YOUR
+    # machine to avoid clashing with any Postgres you might already run on 5432.
+    # So from your machine you connect to localhost:5433.
+    ports:
+      - "5433:5432"
+
+    # A named volume keeps the database files alive even if the container is
+    # deleted and recreated. Without this, all data would vanish on `down`.
+    volumes:
+      - travel_db_data:/var/lib/postgresql/data
+
+    # Docker periodically runs this command to check the DB is actually ready
+    # (not just "started"). Other services can wait for it to be healthy.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-travel} -d ${POSTGRES_DB:-travel}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# Declares the named volume used above.
+volumes:
+  travel_db_data:
