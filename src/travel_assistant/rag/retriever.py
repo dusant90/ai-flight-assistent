@@ -18,6 +18,7 @@ from collections import defaultdict
 
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
+from langsmith import traceable
 
 from travel_assistant.config import Settings, get_settings
 from travel_assistant.rag.store import get_vector_store, load_all_chunks
@@ -44,6 +45,7 @@ def get_bm25_retriever(k: int = 5, settings: Settings | None = None) -> BM25Retr
     return retriever
 
 
+@traceable(name="reciprocal_rank_fusion")
 def reciprocal_rank_fusion(
     ranked_lists: list[list[Document]],
     weights: list[float],
@@ -65,6 +67,7 @@ def reciprocal_rank_fusion(
     return [by_key[key] for key in ordered[:top_n]]
 
 
+@traceable(run_type="retriever", name="hybrid_search")
 def hybrid_search(
     query: str,
     k: int = 5,
